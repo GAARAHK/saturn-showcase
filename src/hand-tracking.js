@@ -19,15 +19,15 @@ export class HandController {
 
   async init() {
     try {
-      // Use local WASM files - use absolute path from server root
+      // Use relative paths for GitHub Pages compatibility
       const vision = await FilesetResolver.forVisionTasks(
-        "/wasm"
+        "./wasm"
       );
       
       this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
-          // Use local model file - use absolute path from server root
-          modelAssetPath: `/models/hand_landmarker.task`,
+          // Use relative path
+          modelAssetPath: `./models/hand_landmarker.task`,
           delegate: "GPU"
         },
         runningMode: this.runningMode,
