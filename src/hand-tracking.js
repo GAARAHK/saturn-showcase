@@ -19,17 +19,15 @@ export class HandController {
 
   async init() {
     try {
-      // Dynamically calculate the base path to handle both local dev and GitHub Pages
-      const url = new URL(window.location.href);
-      const basePath = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+      // Use Vite's BASE_URL to construct correct paths for both Dev and Prod
+      // import.meta.env.BASE_URL will be '/saturn-showcase/' in prod and dev
+      const baseUrl = import.meta.env.BASE_URL;
       
-      // Ensure we don't have double slashes if pathname was just "/"
-      const cleanBasePath = basePath === '/' ? '' : basePath;
+      // Remove trailing slash if present to avoid double slashes
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
       
-      // Construct absolute paths based on the current location
-      // This works for https://user.github.io/repo/ and http://localhost:5173/
-      const wasmPath = `${url.origin}${cleanBasePath}wasm`;
-      const modelPath = `${url.origin}${cleanBasePath}models/hand_landmarker.task`;
+      const wasmPath = `${cleanBase}/wasm`;
+      const modelPath = `${cleanBase}/models/hand_landmarker.task`;
 
       console.log(`Loading WASM from: ${wasmPath}`);
       console.log(`Loading Model from: ${modelPath}`);
