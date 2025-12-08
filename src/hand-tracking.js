@@ -19,15 +19,26 @@ export class HandController {
 
   async init() {
     try {
-      // Use relative paths for GitHub Pages compatibility
-      const vision = await FilesetResolver.forVisionTasks(
-        "./wasm"
-      );
+      // Dynamically calculate the base path to handle both local dev and GitHub Pages
+      const url = new URL(window.location.href);
+      const basePath = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+      
+      // Ensure we don't have double slashes if pathname was just "/"
+      const cleanBasePath = basePath === '/' ? '' : basePath;
+      
+      // Construct absolute paths based on the current location
+      // This works for https://user.github.io/repo/ and http://localhost:5173/
+      const wasmPath = `${url.origin}${cleanBasePath}wasm`;
+      const modelPath = `${url.origin}${cleanBasePath}models/hand_landmarker.task`;
+
+      console.log(`Loading WASM from: ${wasmPath}`);
+      console.log(`Loading Model from: ${modelPath}`);
+
+      const vision = await FilesetResolver.forVisionTasks(wasmPath);
       
       this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
-          // Use relative path
-          modelAssetPath: `./models/hand_landmarker.task`,
+          modelAssetPath: modelPath,
           delegate: "GPU"
         },
         runningMode: this.runningMode,
