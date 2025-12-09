@@ -45,35 +45,59 @@ export class SaturnScene {
     canvas.height = 512;
     const context = canvas.getContext('2d');
 
-    // Base Moon color (Greyish)
-    context.fillStyle = '#cccccc'; 
+    // 1. Realistic Base Grey
+    context.fillStyle = '#b0b0b0'; 
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Add Noise
-    for (let i = 0; i < 50000; i++) {
+    // 2. Generate "Maria" (Dark Seas) - Large irregular dark patches
+    for (let i = 0; i < 40; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 150 + 50;
+        
+        // Use distorted circles for irregularity
+        context.save();
+        context.translate(x, y);
+        context.scale(1 + Math.random(), 1 + Math.random());
+        context.beginPath();
+        context.arc(0, 0, r, 0, Math.PI * 2);
+        context.restore();
+
+        context.fillStyle = 'rgba(60, 60, 65, 0.15)'; // Dark grey, low opacity
+        context.fill();
+    }
+
+    // 3. Surface Noise (Dust/Regolith)
+    for (let i = 0; i < 100000; i++) {
       const x = Math.random() * canvas.width;
       const y = Math.random() * canvas.height;
-      const gray = Math.random() * 50 + 150;
-      context.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+      const shade = Math.random() > 0.5 ? 200 : 100;
+      context.fillStyle = `rgba(${shade}, ${shade}, ${shade}, 0.1)`;
       context.fillRect(x, y, 2, 2);
     }
 
-    // Draw Craters
-    for (let i = 0; i < 100; i++) {
+    // 4. Craters (Realistic shadows)
+    for (let i = 0; i < 400; i++) {
       const x = Math.random() * canvas.width;
       const y = Math.random() * canvas.height;
-      const radius = Math.random() * 20 + 5;
+      const r = Math.random() * 8 + 1;
       
-      // Crater shadow
+      // Shadow (Dark side)
       context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      context.arc(x + r*0.2, y + r*0.2, r, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(30, 30, 30, 0.6)';
       context.fill();
 
-      // Crater highlight (offset)
+      // Highlight (Light side)
       context.beginPath();
-      context.arc(x - 2, y - 2, radius * 0.9, 0, Math.PI * 2);
-      context.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      context.arc(x - r*0.2, y - r*0.2, r, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(200, 200, 200, 0.4)';
+      context.fill();
+
+      // Crater floor (Grey)
+      context.beginPath();
+      context.arc(x, y, r * 0.9, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(140, 140, 140, 0.8)';
       context.fill();
     }
     
@@ -85,12 +109,14 @@ export class SaturnScene {
     
     const texture = this.createMoonTexture();
     
-    // Use MeshStandardMaterial for better lighting on craters
+    // Realistic Photo Look: Matte, rocky, no self-emission
     const material = new THREE.MeshStandardMaterial({ 
       map: texture,
       color: 0xffffff, 
-      roughness: 0.8, // Moon is rough
-      metalness: 0.0
+      roughness: 0.9, // Very rough surface (rock/dust)
+      metalness: 0.0, // Not metallic
+      emissive: 0x000000, // No self-emission
+      emissiveIntensity: 0
     });
     this.saturn = new THREE.Mesh(geometry, material);
     this.scene.add(this.saturn);
@@ -203,7 +229,7 @@ export class SaturnScene {
 
     // Rotate Saturn
     if (this.saturn) {
-      this.saturn.rotation.y += 0.01; // Faster rotation
+      this.saturn.rotation.y += 0.001; // Slow, realistic rotation
     }
 
     // Rotate Rings
