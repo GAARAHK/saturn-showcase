@@ -18,25 +18,22 @@ export class HandController {
 
 
   async init() {
-    const loading = document.getElementById('loading');
-    const updateStatus = (msg) => {
-      console.log(msg);
-      if(loading) loading.innerText = msg;
-    };
-
     try {
       // Use Vite's BASE_URL to construct correct paths for both Dev and Prod
+      // import.meta.env.BASE_URL will be '/saturn-showcase/' in prod and dev
       const baseUrl = import.meta.env.BASE_URL;
+      
+      // Remove trailing slash if present to avoid double slashes
       const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
       
-      // Point directly to the JS file to avoid directory resolution issues
-      const wasmPath = `${cleanBase}/wasm/vision_wasm_internal.js`;
+      const wasmPath = `${cleanBase}/wasm`;
       const modelPath = `${cleanBase}/models/hand_landmarker.task`;
 
-      updateStatus(`Step 1/3: Loading WASM engine...\nPath: ${wasmPath}`);
+      console.log(`Loading WASM from: ${wasmPath}`);
+      console.log(`Loading Model from: ${modelPath}`);
+
       const vision = await FilesetResolver.forVisionTasks(wasmPath);
       
-      updateStatus(`Step 2/3: Downloading AI Model (8MB)...\nPath: ${modelPath}\nThis may take a while.`);
       this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: modelPath,
@@ -45,19 +42,6 @@ export class HandController {
         runningMode: this.runningMode,
         numHands: 1
       });
-
-      updateStatus("Step 3/3: Starting Camera...");
-      this.startWebcam();
-    } catch (error) {
-      console.error("Error initializing hand landmarker:", error);
-      if(loading) {
-        loading.innerText = `Error: ${error.message}\n\nCheck console (F12) for details.`;
-        loading.style.color = "#ff4444";
-        loading.style.textAlign = "center";
-        loading.style.whiteSpace = "pre-wrap";
-      }
-    }
-  }
 
       this.startWebcam();
     } catch (error) {

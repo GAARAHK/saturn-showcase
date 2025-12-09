@@ -39,28 +39,42 @@ export class SaturnScene {
     this.scene.add(fillLight);
   }
 
-  createSaturnTexture() {
+  createMoonTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 512;
     const context = canvas.getContext('2d');
 
-    // Base Saturn color
-    context.fillStyle = '#ceb886'; 
+    // Base Moon color (Greyish)
+    context.fillStyle = '#cccccc'; 
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw bands
-    const colors = [
-      '#bfa068', '#a89060', '#e6d3a3', '#8c7853', '#d6b878', '#9e8e6b'
-    ];
-
-    // Create random bands
-    for (let i = 0; i < 120; i++) {
+    // Add Noise
+    for (let i = 0; i < 50000; i++) {
+      const x = Math.random() * canvas.width;
       const y = Math.random() * canvas.height;
-      const h = Math.random() * 15 + 2;
-      context.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-      context.globalAlpha = Math.random() * 0.5 + 0.1;
-      context.fillRect(0, y, canvas.width, h);
+      const gray = Math.random() * 50 + 150;
+      context.fillStyle = `rgb(${gray}, ${gray}, ${gray})`;
+      context.fillRect(x, y, 2, 2);
+    }
+
+    // Draw Craters
+    for (let i = 0; i < 100; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const radius = Math.random() * 20 + 5;
+      
+      // Crater shadow
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      context.fill();
+
+      // Crater highlight (offset)
+      context.beginPath();
+      context.arc(x - 2, y - 2, radius * 0.9, 0, Math.PI * 2);
+      context.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      context.fill();
     }
     
     return new THREE.CanvasTexture(canvas);
@@ -69,13 +83,14 @@ export class SaturnScene {
   initSaturn() {
     const geometry = new THREE.SphereGeometry(5, 64, 64);
     
-    const texture = this.createSaturnTexture();
+    const texture = this.createMoonTexture();
     
-    // Use MeshPhongMaterial which is often more reliable for simple lighting setups than Standard
-    const material = new THREE.MeshPhongMaterial({ 
+    // Use MeshStandardMaterial for better lighting on craters
+    const material = new THREE.MeshStandardMaterial({ 
       map: texture,
-      color: 0xffffff, // Ensure base color is white so texture shows true colors
-      shininess: 10
+      color: 0xffffff, 
+      roughness: 0.8, // Moon is rough
+      metalness: 0.0
     });
     this.saturn = new THREE.Mesh(geometry, material);
     this.scene.add(this.saturn);
@@ -83,15 +98,18 @@ export class SaturnScene {
 
   initRings() {
     // Create a particle system for the rings
-    const particleCount = 20000;
+    const particleCount = 40000; // More particles for brilliance
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
 
     const innerRadius = 7;
-    const outerRadius = 12;
-    const colorInside = new THREE.Color(0x8c7853);
-    const colorOutside = new THREE.Color(0xcdbba3);
+    const outerRadius = 14; // Slightly wider
+    
+    // Brilliant colors
+    const color1 = new THREE.Color(0xffffff); // White
+    const color2 = new THREE.Color(0x88ccff); // Light Blue
+    const color3 = new THREE.Color(0xffdd88); // Gold
 
     for (let i = 0; i < particleCount; i++) {
       // Random angle
@@ -100,7 +118,7 @@ export class SaturnScene {
       const radius = innerRadius + Math.random() * (outerRadius - innerRadius);
       
       // Spread slightly in Y to give volume
-      const spread = 0.1;
+      const spread = 0.15;
       const x = Math.cos(angle) * radius;
       const y = (Math.random() - 0.5) * spread;
       const z = Math.sin(angle) * radius;
@@ -109,9 +127,12 @@ export class SaturnScene {
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
 
-      // Color gradient based on radius
-      const t = (radius - innerRadius) / (outerRadius - innerRadius);
-      const color = colorInside.clone().lerp(colorOutside, t);
+      // Randomly pick one of the brilliant colors
+      const rand = Math.random();
+      let color;
+      if (rand < 0.6) color = color1;
+      else if (rand < 0.8) color = color2;
+      else color = color3;
       
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
@@ -122,11 +143,12 @@ export class SaturnScene {
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 0.05,
+      size: 0.08, // Slightly larger
       vertexColors: true,
       transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false // Helps with transparency
     });
 
     this.rings = new THREE.Points(geometry, material);
@@ -181,12 +203,12 @@ export class SaturnScene {
 
     // Rotate Saturn
     if (this.saturn) {
-      this.saturn.rotation.y += 0.005;
+      this.saturn.rotation.y += 0.01; // Faster rotation
     }
 
     // Rotate Rings
     if (this.rings) {
-      this.rings.rotation.y -= 0.002; // Spin the rings around their local Y axis
+      this.rings.rotation.y -= 0.003; // Spin the rings around their local Y axis
     }
 
     // Smooth zoom
